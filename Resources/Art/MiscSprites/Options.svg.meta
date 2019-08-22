@@ -1,0 +1,69 @@
+fileFormatVersion: 2
+guid: f8caba86b6f2daf44bb8dd677e20c858
+ScriptedImporter:
+  fileIDToRecycleName:
+    100000: gameObject/Options
+    400000: gameObject/Options/Transform
+    21200000: gameObject/Options/SpriteRenderer
+    21300000: sprite
+    100100000: gameObject
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: a57477913897c46af95d590f580878bd, type: 3}
+  svgType: 0
+  texturedSpriteMeshType: 0
+  svgPixelsPerUnit: 100
+  gradientResolution: 128
+  alignment: 7
+  customPivot: {x: 0, y: 0}
+  generatePhysicsShape: 0
+  preserveViewport: 0
+  advancedMode: 0
+  predefinedResolutionIndex: 1
+  targetResolution: 1080
+  resolutionMultiplier: 1
+  stepDistance: 10
+  samplingStepDistance: 100
+  maxCordDeviationEnabled: 0
+  maxCordDeviation: 1
+  maxTangentAngleEnabled: 0
+  maxTangentAngle: 5
+  keepTextureAspectRatio: 1
+  textureSize: 256
+  textureWidth: 256
+  textureHeight: 256
+  wrapMode: 0
+  filterMode: 1
+  sampleCount: 4
+  spriteData:
+    TessellationDetail: 0
+    SpriteRect:
+      name: OptionsSprite
+      originalName: 
+      pivot: {x: 0.5, y: 0.49722692}
+      alignment: 0
+      border: {x: 0, y: 0, z: 0, w: 0}
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 100
+        height: 72
+      spriteID: 02638cb5a39684b448602a340b4dfdd9
+    PhysicsOutlines:
+    - Vertices:
+      - {x: 0, y: -6}
+      - {x: 0, y: 3}
+      - {x: -50, y: 3}
+      - {x: -50, y: 36}
+      - {x: 50, y: 36}
+      - {x: 50, y: -7}
+    - Vertices:
+      - {x: 50, y: -7}
+      - {x: 50, y: -36}
+      - {x: -50, y: -36}
+      - {x: -50, y: 3}
+      - {x: 0, y: 3}
+      - {x: 0, y: -6}
