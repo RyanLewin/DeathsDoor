@@ -11,7 +11,8 @@ public class Builder : MonoBehaviour
     [SerializeField]
     Tile wood, stone, brick;
     Tile toBuild;
-    public bool destroy { get; private set; }
+    public bool building { get; private set; } = false;
+    public bool destroy { get; private set; } = false;
     public bool fill = false;
     public bool drawLine = false;
     Vector2 lineStart = new Vector2(-1, 0);
@@ -26,6 +27,7 @@ public class Builder : MonoBehaviour
     {
         grid = TileGrid.GetGrid;
         worldController = WorldController.GetWorldController;
+        building = toBuild;
     }
 
     private void Update ()
@@ -39,6 +41,7 @@ public class Builder : MonoBehaviour
 
         if (toBuild)
         {
+
             Vector2 pos = grid.GetPos(Camera.main.ScreenToWorldPoint(Input.mousePosition));
             if (pos.x < 0 || pos.x >= grid.xSize) return;
             if (pos.y < 0 || pos.y >= grid.ySize) return;
@@ -49,7 +52,7 @@ public class Builder : MonoBehaviour
                 {
                     if (Menus.GetMenus.IsOverUI())
                         return;
-
+                    
                     Destroy(tempTile);
                     grid.ClearTempTile();
 
@@ -147,9 +150,9 @@ public class Builder : MonoBehaviour
     void SetTile (int x, int y)
     {
         grid.SetTile(toBuild, x, y);
-        Task task = new Task(TaskItems.Build, new Vector3(x, y, 0));
-        worldController.AddTask(task);
-        grid.GetTileAtPos(new Vector2(x, y)).assignedTask = task;
+        Tile tile = grid.GetTileAtPos(new Vector2(x, y));
+        Task task = new Task(TaskItems.Build, new Vector3(x, y, 0), tile.gameObject, worldController.SelectedCitizen);
+        InputController.instance.GiveTask(task);
     }
 
     void SetLine (Vector2 lineEnd)
@@ -181,8 +184,9 @@ public class Builder : MonoBehaviour
 
     public void SetDestroy (bool _destroy)
     {
-        worldController.SelectedCitizen = null;
+        //worldController.SelectedCitizen = null;
         toBuild = null;
+        building = false;
         destroy = _destroy;
     }
 
@@ -190,8 +194,9 @@ public class Builder : MonoBehaviour
     {
         Destroy(tempTile);
         grid.ClearTempTile();
-        WorldController.GetWorldController.SelectedCitizen = null;
+        //WorldController.GetWorldController.SelectedCitizen = null;
         toBuild = t;
+        building = toBuild;
         destroy = false;
     }
 }

@@ -23,7 +23,7 @@ public class CameraController : MonoBehaviour
 
     void ResetCamSize ()
     {
-        camHeight = 2 * Camera.main.orthographicSize;
+        camHeight = 2 * Camera.main.orthographicSize - 1;
         camWidth = camHeight * Camera.main.aspect;
         camHeight /= 2;
         camWidth /= 2;
@@ -32,36 +32,29 @@ public class CameraController : MonoBehaviour
             s.UpdateScale();
         }
     }
-
-    // Update is called once per frame
+    
     void Update()
     {
         if (Menus.GetMenus.IsOpen)
         {
             return;
         }
-
-
-        //CustomBinding left = keyBindings.GetKey(BindingsNames.moveLeft);
+        
         if (keyBindings.GetKey(BindingsNames.moveLeft).AnyInput)
         {
-            transform.position = transform.position + new Vector3(-speed, 0, 0);
+            MoveCamera(new Vector3(-speed, 0, 0));
         }
-        //if (Input.GetKey(keyBindings.moveLeft) || Input.GetKey(keyBindings.altMoveLeft))
-        //{
-        //    transform.position = transform.position + new Vector3(-speed, 0, 0);
-        //}
         if (keyBindings.GetKey(BindingsNames.moveRight).AnyInput)
         {
-            transform.position = transform.position + new Vector3(speed, 0, 0);
+            MoveCamera(new Vector3(speed, 0, 0));
         }
         if (keyBindings.GetKey(BindingsNames.moveUp).AnyInput)
         {
-            transform.position = transform.position + new Vector3(0, speed, 0);
+            MoveCamera(new Vector3(0, speed, 0));
         }
         if (keyBindings.GetKey(BindingsNames.moveDown).AnyInput)
         {
-            transform.position = transform.position + new Vector3(0, -speed, 0);
+            MoveCamera(new Vector3(0, -speed, 0));
         }
         if (Input.GetAxis("Mouse ScrollWheel") != 0f)
         {
@@ -69,36 +62,40 @@ public class CameraController : MonoBehaviour
                 cam.assetsPPU += 1;
             else
                 cam.assetsPPU -= 1;
-            //cam.assetsPPU -= Mathf.CeilToInt(Input.GetAxis("Mouse ScrollWheel"));
+
             if (cam.assetsPPU > camMaxZoom)
                 cam.assetsPPU = camMaxZoom;
             if (cam.assetsPPU < camMinZoom)
                 cam.assetsPPU = camMinZoom;
             speed = 5f / cam.assetsPPU;
 
-            //Camera.main.orthographicSize -= Input.GetAxis("Mouse ScrollWheel");
-            //if (Camera.main.orthographicSize < 1)
-            //    Camera.main.orthographicSize = 1;
-            //if (Camera.main.orthographicSize > 10)
-            //    Camera.main.orthographicSize = 10;
             ResetCamSize();
         }
+    }
 
-        if (transform.position.x - camWidth < xMin)
+    private void LateUpdate ()
+    {
+        if (transform.position.x < xMin + camWidth)
         {
             transform.position = new Vector3(xMin + camWidth, transform.position.y, 0);
         }
-        if (transform.position.x + camWidth > xMax)
+        else if (transform.position.x > xMax - camWidth)
         {
             transform.position = new Vector3(xMax - camWidth, transform.position.y, 0);
         }
-        if (transform.position.y - camHeight < yMin)
+        if (transform.position.y < yMin + camHeight)
         {
             transform.position = new Vector3(transform.position.x, yMin + camHeight, 0);
         }
-        if (transform.position.y + camHeight > yMax)
+        else if (transform.position.y > yMax - camHeight)
         {
             transform.position = new Vector3(transform.position.x, yMax - camHeight, 0);
         }
+    }
+
+    void MoveCamera (Vector3 translate)
+    {
+        transform.position += translate;
+        ResetCamSize();
     }
 }

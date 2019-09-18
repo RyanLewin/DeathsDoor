@@ -42,6 +42,13 @@ public class DebugMenu : MonoBehaviour
         {
             WorldController.GetWorldController.SpawnCitizen(Camera.main.transform.position);
         }
+        if (GUILayout.Button("New World"))
+        {
+            TileGrid tileGrid = TileGrid.GetGrid;
+            tileGrid.seed = "0";
+            tileGrid.DestroyGrid();
+            tileGrid.GenerateGrid();
+        }
         GUI.DragWindow(new Rect(0, 0, 10000, 10000));
     }
 }

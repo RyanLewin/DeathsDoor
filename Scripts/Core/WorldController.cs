@@ -5,9 +5,10 @@ using UnityEngine;
 public class WorldController : MonoBehaviour
 {
     public static WorldController GetWorldController { get; private set; }
-    int year = 19;
-    int month = 9;
-    int day = 28;
+    
+    public int GetDay { get; set; } = 27;
+    public int GetMonth { get; set; } = 9;
+    public int GetYear { get; set; } = 19;
 
     [SerializeField]
     List<Animal> animals = new List<Animal>();
@@ -140,6 +141,21 @@ public class WorldController : MonoBehaviour
             }
         }
     }
+   
+    public Inventory CheckInventories (Item item, int count)
+    {
+        foreach (Inventory inv in inventoriesInScene)
+        {
+            if (inv.GetComponent<Tile>())
+                if (!inv.GetComponent<Tile>().Built)
+                    continue;
+            if (inv.CheckForItem(item, count))
+            {
+                return inv;
+            }
+        }
+        return null;
+    }
 
     public Inventory CheckInventories (Item item, Vector3 pos)
     {
@@ -147,6 +163,9 @@ public class WorldController : MonoBehaviour
         {
             if (inv.GetComponent<Citizen>())
                 continue;
+            if (inv.GetComponent<Tile>())
+                if (!inv.GetComponent<Tile>().Built)
+                    continue;
             if (inv.CheckForItem(item))
             {
                 return inv;
@@ -159,16 +178,19 @@ public class WorldController : MonoBehaviour
     {
         float dist = float.MaxValue;
         Inventory closest = null;
-        foreach (Inventory i in inventoriesInScene)
+        foreach (Inventory inv in inventoriesInScene)
         {
-            if (i.GetComponent<Citizen>())
+            if (inv.GetComponent<Citizen>())
                 continue;
-            if (i.CheckIfFull())
+            if (inv.GetComponent<Tile>())
+                if (!inv.GetComponent<Tile>().Built)
+                    continue;
+            if (inv.CheckIfFull())
                 continue;
-            if (Vector3.Distance(i.transform.position, pos) < dist)
+            if (Vector3.Distance(inv.transform.position, pos) < dist)
             {
-                dist = Vector3.Distance(i.transform.position, pos);
-                closest = i;
+                dist = Vector3.Distance(inv.transform.position, pos);
+                closest = inv;
             }
         }
         return closest;
@@ -244,6 +266,8 @@ public class WorldController : MonoBehaviour
             return false;
         if (task.task == TaskItems.None || task.task == TaskItems.Move)
             return false;
+        if (task.personal)
+            return false;
         foreach (Task t in taskList)
         {
             if (t.location == task.location)
@@ -258,14 +282,14 @@ public class WorldController : MonoBehaviour
     /// </summary>
     /// <param name="_month">If 12 then pick a random month</param>
     /// <returns></returns>
-    public string GetMonth (bool random = false)
+    public string GetMonthString (bool random = false)
     {
         string date = "";
         int _month;
         if (random)
             _month = Random.Range(0, 12);
         else
-            _month = month;
+            _month = GetMonth;
 
         switch (_month)
         {
@@ -307,10 +331,5 @@ public class WorldController : MonoBehaviour
                 break;
         }
         return date;
-    }
-
-    public int GetYear ()
-    {
-        return year;
     }
 }

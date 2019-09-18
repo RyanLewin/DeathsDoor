@@ -12,6 +12,10 @@ public class Citizen : MonoBehaviour
     int targetIndex;
     public Task currTask { get; private set; }
     public List<Task> taskList { get; set; } = new List<Task>();
+
+    bool newBorn = false;
+    bool newCitizen = true;
+
     public string citizenName = "First Last";
     public bool gender = true;
     public int age = 30;
@@ -48,7 +52,8 @@ public class Citizen : MonoBehaviour
         worldController = WorldController.GetWorldController;
         pathfinder = worldController.GetComponent<Pathfinder>();
         requestManager = worldController.GetComponent<PathRequestManager>();
-        SetStats();
+        if (newCitizen)
+            SetStats(newBorn);
         currTask = new Task(TaskItems.None, transform.position);
         GetComponent<Appearance>().SetAppearance();
     }
@@ -76,11 +81,10 @@ public class Citizen : MonoBehaviour
                 worldController.NeedsTask(this);
             }
         }
-        //GetTask();
         else
         {
             if (!taskTile)
-                CancelPath();
+                EndTask();
         }
 
         switch (currTask.task)
@@ -88,6 +92,11 @@ public class Citizen : MonoBehaviour
             case (TaskItems.None):
                 break;
             case (TaskItems.Build):
+                if (currTask.obj.GetComponent<Tile>().Built)
+                {
+                    currTask = new Task();
+                    break;
+                }
                 GetOutOfVehicle();
                 SetToBuild();
                 break;
@@ -104,6 +113,10 @@ public class Citizen : MonoBehaviour
             case (TaskItems.Loot):
                 Loot();
                 break;
+            case (TaskItems.Mine):
+                SetToMine();
+                break;
+            case (TaskItems.Harvest):
             case (TaskItems.Hunt):
             case (TaskItems.Cook):
             case (TaskItems.Defend):
@@ -112,19 +125,34 @@ public class Citizen : MonoBehaviour
                 currTask = new Task();
                 break;
         }
+    }
 
-        //if (KeyBindings.GetKeyBindings.GetKey(BindingsNames.select).KeyDown)
-        //{
-        //    if (Menus.GetMenus.IsOverUI())
-        //        return;
-        //    Vector3 pos = Camera.main.ScreenToWorldPoint(Input.mousePosition + new Vector3(0,0,-1));
-        //    RaycastHit2D hit = Physics2D.Raycast(pos, Vector3.forward);
-        //    if (hit.transform == transform)
-        //    {
-        //        worldController.SelectedCitizen = this;
-        //        //Menus.GetMenus.PlayerDetails(this);
-        //    }
-        //}
+    void SetToMine ()
+    {
+        if (Vector2.Distance(currTask.location, transform.position) < 1f)
+        {
+            Foliage foliage = currTask.obj.GetComponentInParent<Foliage>();
+            if (foliage)
+            {
+                if (buildTimer < foliage.timeToChop)
+                {
+                    buildTimer += Time.deltaTime * (GetStat("Strength").value / 5);
+                }
+                else
+                {
+                    foliage.ChopDown();
+                    EndTask();
+                }
+            }
+        }
+        else
+        {
+            if (!move)
+            {
+                Move();
+                move = true;
+            }
+        }
     }
 
     public void SetItemToLoot (Item item, bool personal)
@@ -135,22 +163,30 @@ public class Citizen : MonoBehaviour
         taskList.Add(new Task(TaskItems.Loot, itemToLoot.transform.position, itemToLoot.gameObject, personal));
         worldController.NoLongerNeedsTask(this);
     }
-
-    int storeCount = 0;
+    
     void Loot ()
     {
         if (pickUp && invSetting != 1)
         {
             if (itemToLoot != null)
             {
-                if (Vector2.Distance(currTask.location, transform.position) < 0.5f)
+                if (Vector2.Distance(currTask.location, transform.position) < 1f)
                 {
-                    itemToLoot.transform.SetParent(transform);
-                    GetComponent<Inventory>().AddItem(itemToLoot, itemToLoot.count);
+                    if (!inVehicle)
+                    {
+                        GetComponent<Inventory>().AddItem(itemToLoot, itemToLoot.count);
+                        itemToLoot.transform.SetParent(transform);
+                    }
+                    else
+                    {
+                        vehicle.GetComponent<Inventory>().AddItem(itemToLoot, itemToLoot.count);
+                        itemToLoot.transform.SetParent(vehicle.transform);
+                    }
                     //inventory.Add(itemToLoot);
                     itemToLoot.gameObject.SetActive(false);
-                    itemToLoot.toBeLooted = false;
+                    itemToLoot.SetToBeLooted = false;
                     itemToLoot = null;
+                    currTask = new Task();
                 }
                 else
                 {
@@ -168,7 +204,7 @@ public class Citizen : MonoBehaviour
                     if (invSetting != 0)
                         pickUp = false;
                     else
-                        CancelPath();
+                        EndTask();
                 }
                 else
                 {
@@ -180,7 +216,7 @@ public class Citizen : MonoBehaviour
                     }
                     else
                     {
-                        CancelPath();
+                        EndTask();
                     }
                 }
             }
@@ -191,14 +227,12 @@ public class Citizen : MonoBehaviour
             {
                 if (Vector2.Distance(currTask.location, transform.position) < 1f)
                 {
-                    GetComponent<Inventory>().TakeItem(itemToReplace, itemToReplace.count);
+                    //Item replacedItem = GetComponent<Inventory>().TakeItem(itemToReplace, itemToReplace.count);
                     Inventory inv = worldController.CheckInventories(itemToReplace, transform.position);
                     itemToReplace.transform.SetParent(inv.transform);
+                    itemToReplace.transform.localPosition = Vector3.zero;
                     inv.AddItem(itemToReplace, itemToReplace.count);
-                    itemToReplace = null;
-                    storeCount++;
-                    if (storeCount >= GetComponent<Inventory>().items.Count)
-                        storeCount = 0;
+                    EndTask();
                 }
                 else
                 {
@@ -209,25 +243,6 @@ public class Citizen : MonoBehaviour
                     }
                 }
             }
-            else
-            {
-                if (invSetting != 1)
-                {
-                    currTask = new Task();
-                    return;
-                }
-                itemToReplace = GetComponent<Inventory>().items[storeCount];
-                if (itemToReplace != null)
-                {
-                    Inventory inv = worldController.CheckInventories(itemToReplace, transform.position);
-                    currTask = new Task(TaskItems.Loot, inv.transform.position);
-                    worldController.NoLongerNeedsTask(this);
-                }
-                else
-                {
-                    storeCount = 0;
-                }
-            }
         }
     }
 
@@ -235,10 +250,23 @@ public class Citizen : MonoBehaviour
     {
         pickUp = false;
         itemToReplace = item;
-        taskTile = TileGrid.GetGrid.GetTileAtPos(itemToReplace.transform.position);
         Inventory inv = worldController.CheckInventories(itemToReplace, transform.position);
-        currTask = new Task(TaskItems.Loot, inv.transform.position, item.gameObject, true);
-        worldController.NoLongerNeedsTask(this);
+        if (inv)
+        {
+            Vector3 pos = inv.transform.position;
+            if (vehicle)
+            {
+                if (vehicle.GetComponent<Inventory>() == inv)
+                    pos = transform.position;
+            }
+            taskTile = TileGrid.GetGrid.GetTileAtPos(pos);
+            currTask = new Task(TaskItems.Loot, pos, item.gameObject, true);
+            worldController.NoLongerNeedsTask(this);
+        }
+        else
+        {
+            itemToReplace = null;
+        }
     }
 
     public void SetVehicle (Vehicle v)
@@ -353,7 +381,7 @@ public class Citizen : MonoBehaviour
         requestManager.RequestPath(transform.position, currTask.location, OnPathFound);
     }
 
-    void CancelPath ()
+    void EndTask ()
     {
         StopCoroutine(FollowPath());
         currTask = new Task();
@@ -363,6 +391,7 @@ public class Citizen : MonoBehaviour
         taskTile = null;
         buildTimer = 0;
         itemToLoot = null;
+        itemToReplace = null;
     }
 
     public void OnPathFound (Vector3[] _path, bool _success)
@@ -377,7 +406,7 @@ public class Citizen : MonoBehaviour
         else
         {
             worldController.AddTask(currTask);
-            CancelPath();
+            EndTask();
         }
     }
 
@@ -411,13 +440,18 @@ public class Citizen : MonoBehaviour
                 currWaypoint = path[targetIndex];
             }
             transform.up = new Vector3(currWaypoint.x, currWaypoint.y, transform.position.z) - transform.position;
-            transform.position = Vector3.MoveTowards(transform.position, currWaypoint, Time.deltaTime * ((GetStat("Speed").value + 1) / 2));
+            float speed = Time.deltaTime * ((GetStat("Speed").value + 1) / 2);
+            if (TileGrid.GetGrid.GetTileAtPos(transform.position).tileType == TileType.Water)
+                speed *= .33f;
+            transform.position = Vector3.MoveTowards(transform.position, currWaypoint, speed);
             yield return null;
         }
     }
 
     public void GiveTask (Task task)
     {
+        if (currTask.task == TaskItems.Move)
+            EndTask();
         currTask = task;
         taskTile = TileGrid.GetGrid.GetTileAtPos(currTask.location);
         taskTile.assignedCitizen = this;
@@ -452,7 +486,7 @@ public class Citizen : MonoBehaviour
         return stats.Find(stat => stat.name == name);
     }
 
-    void SetStats ()
+    void SetStats (bool isNewBorn)
     {
         stats = new List<Stat>
         {
@@ -489,50 +523,72 @@ public class Citizen : MonoBehaviour
         }
         citizenName = lines[randomLineNumber];
 
-        age = Random.Range(14, 65);
-        int birthYear = WorldController.GetWorldController.GetYear() - age;
-        if (birthYear < 0)
-            birthYear = 100 + birthYear;
-        dob = WorldController.GetWorldController.GetMonth(true) + "'" + birthYear.ToString("00");
+        SetAge(isNewBorn);
         potential = Random.Range(17, 101);
-        ability = Random.Range(16, potential);
 
-        int pointsToPick = ability;
-        do
+        if (age >= 7)
         {
-            foreach (Stat stat in stats)
+            ability = Random.Range(16, potential);
+
+            int pointsToPick = ability;
+            do
             {
-                int weight = Random.Range(0, 5);
-
-                int rand;
-                if (weight <= 1)
-                    continue;
-                else if (weight <= 3)
-                    rand = 1;
-                else
-                    rand = Random.Range(2, 6);
-
-                if (rand > pointsToPick)
+                foreach (Stat stat in stats)
                 {
-                    rand = pointsToPick;
-                }
+                    int weight = Random.Range(0, 5);
 
-                stat.value += rand;
-                if (stat.value > 10)
-                {
-                    int v = (int)stat.value - 10;
-                    pointsToPick += v;
-                    stat.value = 10;
+                    int rand;
+                    if (weight <= 1)
+                        continue;
+                    else if (weight <= 3)
+                        rand = 1;
+                    else
+                        rand = Random.Range(2, 6);
+
+                    if (rand > pointsToPick)
+                    {
+                        rand = pointsToPick;
+                    }
+
+                    stat.value += rand;
+                    if (stat.value > 10)
+                    {
+                        int v = (int)stat.value - 10;
+                        pointsToPick += v;
+                        stat.value = 10;
+                    }
+                    pointsToPick -= rand;
+                    if (pointsToPick <= 0)
+                        break;
                 }
-                pointsToPick -= rand;
-                if (pointsToPick <= 0)
-                    break;
-            }
-        } while (pointsToPick > 0);
+            } while (pointsToPick > 0);
 
 #if UNITY_EDITOR
-        stats[8].value = 10;
+            stats[8].value = 10;
 #endif
+        }
+        else
+        {
+            ability = stats.Count;
+        }
+    }
+
+    public void SetAge (bool isNewBorn)
+    {
+        if (newBorn)
+        {
+            age = 0;
+            int birthYear = worldController.GetYear;
+            dob = worldController.GetMonthString() + "'" + birthYear.ToString("00");
+        }
+        else
+        {
+            age = Random.Range(14, 65);
+            int birthYear = worldController.GetYear - age;
+            if (birthYear < 0)
+                birthYear = 100 + birthYear;
+            dob = worldController.GetMonthString(true) + "'" + birthYear.ToString("00");
+        }
     }
 }
 

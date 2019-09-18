@@ -7,17 +7,21 @@ public class TileGrid : MonoBehaviour
     public bool onlyDisplayPathGizmos;
     public static TileGrid GetGrid { get; private set; }
     WorldController worldController;
+    public string seed = "00000000";
     public int xSize { get; private set; } = 100;
     public int ySize { get; private set; } = 100;
     Tile[,] grid;
+    public List<Tile> tickTiles = new List<Tile>();
     [SerializeField]
     Tile emptyTile = default;
     Tile inactiveTile;
+
+    
+    int treeChance = 2; //out of 100
    
     [SerializeField]
     Texture2D spritesheet = default;
-    public Sprite[] sprites;
-    public Sprite[] GetSprites { get => sprites; }
+    public Sprite[] GetSprites { get; private set; }
     public Sprite[] wallSprites;
 
     //Dictionary<TileType, Tile> tiles = new Dictionary<TileType, Tile>();
@@ -34,7 +38,13 @@ public class TileGrid : MonoBehaviour
 
     private void Awake ()
     {
-        sprites = Resources.LoadAll<Sprite>("Art/Buildings/Structures/" + spritesheet.name);
+#if UNITY_EDITOR
+        //seed = "0";
+        seed = "25252490";
+#endif
+        xSize = TextureCreator.GetMap.resolution;
+        ySize = TextureCreator.GetMap.resolution;
+        GetSprites = Resources.LoadAll<Sprite>("Art/Buildings/Structures/" + spritesheet.name);
         GetGrid = this;
         //foreach (AllTiles t in tiles)
         //{
@@ -98,9 +108,30 @@ public class TileGrid : MonoBehaviour
     public void SetTile (Tile newTile, int x, int y, bool groundTile = false)
     {
         Tile currTile = GetTileAtPos(new Vector2(x, y));
-        if (currTile == null || (!currTile.replacable && !groundTile))
+        if (currTile == null || (!currTile.replacable && !groundTile) || !currTile.Built)
         {
             return;
+        }
+
+        //Check if the build requires items and if these items are collected
+        if (newTile.doesRequireItem)
+        {
+            foreach (Requirements items in newTile.itemsRequired)
+            {
+                Inventory inv = worldController.CheckInventories(items.item, items.count);
+                if (inv)
+                {
+                    //remove items from inventory
+                    Item item = inv.TakeItem(items.item, items.count);
+                    Destroy(item.gameObject);
+                }
+                else
+                {
+                    //resources aren't available so stop builder
+                    Builder.instance.SetBuild(null);
+                    return;
+                }
+            }
         }
 
         Tile tile = Instantiate(newTile, new Vector3(x, y, 0), newTile.transform.rotation);
@@ -115,21 +146,103 @@ public class TileGrid : MonoBehaviour
         }
         Destroy(grid[x, y].gameObject);
         grid[x, y] = tile;
-
+        
         Node node = grid[x, y].GetComponent<Node>();
         node.x = x;
         node.y = y;
         node.walkable = true;
     }
 
-    void GenerateGrid ()
+    public void DestroyGrid ()
+    {
+        foreach (Tile tile in grid)
+        {
+            Destroy(tile.gameObject);
+        }
+        grid = null;
+    }
+
+    public void GenerateGrid ()
     {
         grid = new Tile[xSize, ySize];
+        TextureCreator map = TextureCreator.GetMap;
+
+        if (int.Parse(seed) == 0)
+        {
+            int xVal = Random.Range(1, 3) * 1000;
+            int yVal = Random.Range(1, 3) * 1000;
+            xVal += Random.Range(0, 1000);
+            yVal += Random.Range(0, 1000);
+            seed = xVal.ToString() + yVal.ToString();
+        }
+        seed.Substring(1, 3);
+        float xPos = float.Parse(seed.Substring(1, 3)) / 10;
+        float yPos = float.Parse(seed.Substring(5, 3)) / 10;
+        if (seed[0] == '2')
+            xPos *= -1;
+        if (seed[4] == '2')
+            yPos *= -1;
+        map.transform.position = new Vector3(xPos, yPos, -1f);
+
         for (int x = 0; x < xSize; x++)
         {
             for (int y = 0; y < ySize; y++)
             {
+                Color color = map.GetTexture(new Vector2(x, y));
+
+                //sand
+                if (color.Equals(Color.white))
+                    emptyTile = GetTileOfType(TileType.Sand);
+                //deep water
+                else if (color.Equals(Color.blue))
+                    emptyTile = GetTileOfType(TileType.DeepWater);
+                //grass
+                else if (color.Equals(Color.green))
+                {
+                    emptyTile = GetTileOfType(TileType.Grass);
+                    //spawn tree
+                    int rand = Random.Range(0, 100);
+                    if (rand < treeChance)
+                    {
+                        bool skip = false;
+                        if (x > 0 && y > 0)
+                        {
+                            if (grid[x - 1, y - 1].GetComponent<Foliage>())
+                                skip = true;
+                        }
+                        if (x > 0)
+                        {
+                            if (grid[x - 1, y].GetComponent<Foliage>())
+                                skip = true;
+                        }
+                        if (x > 0 && y < ySize - 1)
+                        {
+                            if (grid[x - 1, y + 1].GetComponent<Foliage>())
+                                skip = true;
+                        }
+                        if (y > 0)
+                        {
+                            if (grid[x, y - 1].GetComponent<Foliage>())
+                                skip = true;
+                        }
+
+                        if (!skip)
+                        {
+                            emptyTile = GetTileOfType(TileType.Tree);
+                            emptyTile.tileUnderneath = TileType.Grass;
+                            emptyTile.GetComponent<Foliage>().age = 1;
+                        }
+                    }
+                }
+                //stone walls - can be used for caves
+                else if (color.Equals(Color.black))
+                    emptyTile = GetTileOfType(TileType.Stone, Category.Walls);
+                //water
+                else if (color.Equals(Color.cyan))
+                    emptyTile = GetTileOfType(TileType.Water);
+
                 Tile t = Instantiate(emptyTile, new Vector3(x, y, 0), emptyTile.transform.rotation);
+                t.built = true;
                 t.name = t.name + " " + x + ":" + y;
                 t.transform.SetParent(transform);
                 t.x = x;
@@ -144,6 +257,15 @@ public class TileGrid : MonoBehaviour
         }
     }
 
+    Vector3 ColorCompare (Color a, Color b)
+    {
+        Vector3 compare = new Vector3(a.r, a.g, a.b);
+        compare.x -= b.r;
+        compare.y -= b.g;
+        compare.z -= b.b;
+        return compare;
+    }
+
     public List<Node> GetNeighbours (Node node)
     {
         List<Node> neighbours = new List<Node>();
@@ -154,9 +276,7 @@ public class TileGrid : MonoBehaviour
             {
                 if (x == 0 && y == 0)
                     continue;
-
-                //if (x == -1 && y == 1 || x == 1 && y == 1 || x == 1 && y == -1 || x == -1 && y == -1)
-                //    continue;
+                
                 if (CheckIfBlocked(node, x, y))
                     continue;
 
@@ -213,35 +333,23 @@ public class TileGrid : MonoBehaviour
         return gridPos;
     }
 
-    public Tile GetTileOfType (TileType type)
+    public Tile GetTileOfType (TileType type, Category category = Category.WorldGen)
     {
         foreach (AllTiles tile in tiles)
         {
             if (tile.type == type)
-                return tile.tile;
+            {
+                if (tile.category == category || category == Category.WorldGen)
+                    return tile.tile;
+            }
         }
         return GetTileOfType(TileType.Grass);
     }
-
-    //public Vector3[] path;
-    //void OnDrawGizmos ()
-    //{
-    //    Gizmos.DrawWireCube(transform.position, new Vector3(xSize, 1, ySize));
-        
-    //    if (path != null)
-    //    {
-    //        foreach (Vector3 n in path)
-    //        {
-    //            Gizmos.color = Color.black;
-    //            Gizmos.DrawCube(n, Vector3.one * (-.1f));
-    //        }
-    //    }
-    //}
 }
 
-public enum Category { NonBuildable, Walls, Floors }
+public enum Category { WorldGen, Walls, Floors, Misc, Foliage }
 
 public enum TileType
 {
-    Wood, Stone, Bricks, Grass, Dirt, Sand, Water 
+    Wood, Stone, Bricks, Grass, Dirt, Sand, Water, DeepWater, Inventory, Tree
 }

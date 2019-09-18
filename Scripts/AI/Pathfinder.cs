@@ -38,6 +38,8 @@ public class Pathfinder : MonoBehaviour
 
         Node start = tileGrid.GetTileAtPos(_start).GetComponent<Node>();
         Node target = tileGrid.GetTileAtPos(_end).GetComponent<Node>();
+        if (!start || !target)
+            yield return null;
 
         if (start != target)
         {
@@ -66,7 +68,7 @@ public class Pathfinder : MonoBehaviour
                     if (!n.walkable)
                         continue;
 
-                    int f = currentNode.g + GetDistance(currentNode, n);
+                    int f = currentNode.g + GetDistance(currentNode, n) + n.weight;
                     if (f < n.g || !openNodes.Contains(n))
                     {
                         n.g = f;
@@ -124,13 +126,13 @@ public class Pathfinder : MonoBehaviour
             Vector2 newDir = new Vector2(path[i - 1].x - path[i].x, path[i - 1].y - path[i].y);
             if (newDir != oldDir)
             {
-                pathPos = path[i].transform.position;
+                pathPos = path[i - 1].transform.position;
                 pathPos.z = -0.01f;
                 waypoints.Add(pathPos);
             }
             oldDir = newDir;
         }
-        //waypoints.Add(path[path.Count - 1].transform.position);
+        waypoints.Add(path[path.Count - 1].transform.position);
         return waypoints.ToArray();
     }
 

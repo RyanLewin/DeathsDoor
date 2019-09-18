@@ -97,7 +97,9 @@ MonoBehaviour:
   id: 1
   size: 1
   count: 1
+  offset: {x: 0, y: 0, z: -0.06}
   toBeLooted: 0
+  type: 0
 --- !u!61 &2980762193197928741
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -122,7 +124,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.4392583, y: 0.5346154}
+  m_Size: {x: 0.56016594, y: 0.7237274}
   m_EdgeRadius: 0
 --- !u!1 &2980762195142123711
 GameObject:

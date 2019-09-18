@@ -154,16 +154,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   x: 0
   y: 0
-  built: 1
+  tickUpdate: 0
+  built: 0
   replacable: 1
   tileType: 4
+  category: 2
   tileUnderneath: 0
   walkable: 1
   placeholder: {fileID: 6746495379476164663}
-  timeToBuild: 2
+  timeToBuild: 0.05
   buildTime: 0
   assignedCitizen: {fileID: 0}
   backgroundTile: {fileID: 0}
+  destroyBackgroundTile: 1
+  doesRequireItem: 0
+  itemsRequired: []
 --- !u!114 &1761970345767855301
 MonoBehaviour:
   m_ObjectHideFlags: 0

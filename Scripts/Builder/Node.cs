@@ -6,7 +6,7 @@ using UnityEngine;
 public enum NODE_STATE { OPEN, CLOSED, ERROR, PATH };
 public class Node : MonoBehaviour, IHeapItem<Node>
 {
-    public List<GameObject> ConnectedNodes;
+    public List<GameObject> ConnectedNodes = new List<GameObject>();
 
     [SerializeField]
     public Node ParentNode { get; set; }
@@ -14,11 +14,11 @@ public class Node : MonoBehaviour, IHeapItem<Node>
     /// <summary>
     /// list of weighting for each connection in order.
     /// </summary>
-    public List<float> ConnectionCosts;
+    public List<float> ConnectionCosts = new List<float>();
 
     public int x, y;
     public bool walkable;
-    public float weight;
+    public int weight;
     public int g;
     public int h;
     public float f { get { return g + h; } }

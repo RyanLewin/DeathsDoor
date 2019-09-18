@@ -154,6 +154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   x: 0
   y: 0
+  tickUpdate: 0
   built: 0
   replacable: 0
   tileType: 0
@@ -164,8 +165,17 @@ MonoBehaviour:
   timeToBuild: 1
   buildTime: 0
   assignedCitizen: {fileID: 0}
+  assignedTask:
+    task: 0
+    location: {x: 0, y: 0, z: 0}
+    obj: {fileID: 0}
+    personal: 0
   backgroundTile: {fileID: 0}
-  wallShader: {fileID: 0}
+  destroyBackgroundTile: 1
+  doesRequireItem: 1
+  itemsRequired:
+  - item: {fileID: 2311942353694749099, guid: 9047c8ed65b624e4398878cbc1872acf, type: 3}
+    count: 1
 --- !u!114 &1493445182
 MonoBehaviour:
   m_ObjectHideFlags: 0

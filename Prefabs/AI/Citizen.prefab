@@ -272,8 +272,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   invSize: 4
+  storedItemPositions: []
   items: []
   offset: {x: 0, y: 1, z: 0}
+  open: 0
   full: 0
 --- !u!1 &7909354719913397470
 GameObject:

@@ -18,7 +18,7 @@ public class BuildingUI : MonoBehaviour
     GameObject button = default;
     [SerializeField]
     Toggle toggleFill = default;
-    Category openCategory = Category.NonBuildable;
+    Category openCategory = Category.WorldGen;
 
     Dictionary<int, Tile[]> tileCategories = new Dictionary<int, Tile[]>();
 
@@ -26,6 +26,7 @@ public class BuildingUI : MonoBehaviour
     {
         builder = Builder.instance;
         tileGrid = TileGrid.GetGrid;
+        OpenMenu(false);
 
         int count = System.Enum.GetNames(typeof(Category)).Length;
         List<Tile[]> categories = new List<Tile[]>();

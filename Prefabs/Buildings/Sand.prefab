@@ -154,16 +154,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   x: 0
   y: 0
-  built: 1
+  tickUpdate: 0
+  built: 0
   replacable: 1
   tileType: 5
+  category: 2
   tileUnderneath: 0
   walkable: 1
   placeholder: {fileID: 873989758533024010}
-  timeToBuild: 2
+  timeToBuild: 0.05
   buildTime: 0
   assignedCitizen: {fileID: 0}
+  assignedTask:
+    task: 0
+    location: {x: 0, y: 0, z: 0}
+    obj: {fileID: 0}
+    personal: 0
   backgroundTile: {fileID: 0}
+  destroyBackgroundTile: 1
 --- !u!114 &185671168467962741
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -182,7 +190,7 @@ MonoBehaviour:
   y: 0
   walkable: 0
   weight: 0
-  g: 0
+  g: 1
   h: 0
 --- !u!1 &3487950363242303090
 GameObject:

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class Task
 {
     public TaskItems task;
@@ -29,5 +30,7 @@ public enum TaskItems
     Hunt,
     Cook,
     Defend,
-    Loot
+    Loot,
+    Mine,
+    Harvest
 }

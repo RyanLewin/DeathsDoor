@@ -7,26 +7,40 @@ public class Tile : MonoBehaviour
 {
     protected TileGrid grid;
     public int x, y;
+    ///<summary> Should it update on each tick. </summary>
+    public bool tickUpdate = false;
+    ///<summary> Is the tile built. </summary>
     public bool built = false;
+    ///<summary> Determines whether the tile can be replaced. </summary>
     public bool replacable = false;
     public TileType tileType;
     public Category category;
+    /// <summary> The tile that this tile was built upon. </summary>
     public TileType tileUnderneath;
+    /// <summary> Can you walk on this tile. </summary>
     public bool walkable;
     [SerializeField]
     public bool IsWalkable { get; protected set; }
 
+    /// <summary> The placeholder that shows where the tile will be built. </summary>
     [SerializeField]
     GameObject placeholder = default;
     public GameObject sprite { get; protected set; }
+    /// <summary> If the tile is a wall then a border is placed around it to show its raised.  </summary>
     SpriteRenderer wallVisual;
 
+    /// <summary> How long it takes to build this time. </summary>
     public float timeToBuild = 2;
+    /// <summary> Amount of time spent building so far </summary>
     public float buildTime = 0;
     public Citizen assignedCitizen;
-    public Task assignedTask;
 
     public GameObject backgroundTile;
+    /// <summary> Should the background tile be destroyed after being built </summary>
+    public bool destroyBackgroundTile = true;
+
+    public bool doesRequireItem = false;
+    public List<Requirements> itemsRequired = new List<Requirements>();
 
     protected virtual void Awake ()
     {
@@ -36,23 +50,9 @@ public class Tile : MonoBehaviour
             walkable = false;
         }
         IsWalkable = true;
-    }
-
-    protected virtual void Start ()
-    {
-        placeholder.SetActive(!built);
         sprite = transform.GetChild(0).gameObject;
-        sprite.SetActive(built);
-        if (!built)
-        {
-            backgroundTile = new GameObject("BackgroundTile");
-            backgroundTile.transform.position = transform.position;
-            backgroundTile.transform.SetParent(transform);
-            //backgroundTile = Instantiate(new GameObject(), transform.position, transform.rotation, transform);
-            backgroundTile.AddComponent<SpriteRenderer>();
-            backgroundTile.GetComponent<SpriteRenderer>().sprite = grid.GetSpriteOfTile(tileUnderneath);
-            backgroundTile.GetComponent<SpriteRenderer>().sortingOrder = placeholder.GetComponent<SpriteRenderer>().sortingOrder - 1;
-        }
+
+        //Add surrounding effect to make the wall stand out
         if (category == Category.Walls)
         {
             GameObject go = new GameObject("Wall");
@@ -63,6 +63,35 @@ public class Tile : MonoBehaviour
             wallVisual.sortingOrder = sprite.GetComponent<SpriteRenderer>().sortingOrder + 1;
             wallVisual.color = AverageColorFromTexture(sprite.GetComponent<SpriteRenderer>().sprite);
         }
+        else if (category == Category.Foliage)
+        {
+            placeholder.GetComponent<SpriteRenderer>().sprite = grid.GetSpriteOfTile(tileUnderneath);
+        }
+    }
+
+    protected virtual void Start ()
+    {
+        Built = built;
+        if (!built)
+        {
+            backgroundTile = new GameObject("BackgroundTile");
+            backgroundTile.transform.position = transform.position;
+            backgroundTile.transform.SetParent(transform);
+            //backgroundTile = Instantiate(new GameObject(), transform.position, transform.rotation, transform);
+            backgroundTile.AddComponent<SpriteRenderer>();
+            backgroundTile.GetComponent<SpriteRenderer>().sprite = grid.GetSpriteOfTile(tileUnderneath);
+            backgroundTile.GetComponent<SpriteRenderer>().sortingOrder = placeholder.GetComponent<SpriteRenderer>().sortingOrder - 1;
+        }
+    }
+
+    public virtual void TickUpdate ()
+    {
+
+    }
+
+    public virtual void DayUpdate ()
+    {
+
     }
     
     Color AverageColorFromTexture (Sprite sprite)
@@ -208,7 +237,7 @@ public class Tile : MonoBehaviour
                                     if (ld)
                                     {
                                         wallVisual.sprite = grid.wallSprites[10];
-                                        wallVisual.transform.rotation = Quaternion.Euler(0, 0, 90);
+                                        wallVisual.transform.rotation = Quaternion.Euler(0, 0, -90);
                                     }
                                     else
                                     {
@@ -522,9 +551,11 @@ public class Tile : MonoBehaviour
         set
         {
             built = value;
-            placeholder.SetActive(!built);
-            GetComponent<Node>().walkable = walkable;
-            sprite.SetActive(built);
+            if (placeholder)
+            {
+                placeholder.SetActive(!built);
+                sprite.SetActive(built);
+            }
             if (built)
             {
                 OnBuilt();
@@ -535,14 +566,37 @@ public class Tile : MonoBehaviour
     protected virtual void OnBuilt ()
     {
         if (backgroundTile)
-            Destroy(backgroundTile);
+        {
+            if (destroyBackgroundTile)
+                Destroy(backgroundTile);
+        }
+
+        if (tickUpdate)
+            grid.tickTiles.Add(this);
 
         if (category == Category.Walls)
             UpdateWall();
+        
+        GetComponent<Node>().walkable = walkable;
+
+        if (GetComponent<Inventory>())
+        {
+            WorldController.GetWorldController.inventoriesInScene.Add(GetComponent<Inventory>());
+        }
     }
 
     private void OnDestroy ()
     {
+        if (doesRequireItem && Built)
+        {
+            foreach (Requirements i in itemsRequired)
+            {
+                Item item = Instantiate(i.item, transform.position, transform.rotation);
+                item.count = i.count;
+                item.SetToBeLooted = true;
+            }
+        }
+
         if (category != Category.Walls)
             return;
 
@@ -574,4 +628,11 @@ public class Tile : MonoBehaviour
         leftDown?.AdjacentWall(ld);
         rightDown?.AdjacentWall(rd);
     }
+}
+
+[System.Serializable]
+public class Requirements
+{
+    public Item item;
+    public int count;
 }

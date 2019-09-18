@@ -105,7 +105,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.13709034, y: 0.5028007}
+  m_Size: {x: 0.31445283, y: 0.601629}
   m_EdgeRadius: 0
 --- !u!114 &108012697
 MonoBehaviour:
@@ -122,5 +122,6 @@ MonoBehaviour:
   id: 0
   size: 1
   count: 1
+  offset: {x: 0, y: 0, z: -0.06}
   toBeLooted: 0
   damage: 10

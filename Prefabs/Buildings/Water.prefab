@@ -69,7 +69,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: 74a381585bbcd424dabef6c9248aebff, type: 3}
-  m_Color: {r: 0.5727127, g: 0.8490566, b: 0.82123536, a: 1}
+  m_Color: {r: 0.28875935, g: 0.38816497, b: 0.5943396, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -233,16 +233,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   x: 0
   y: 0
-  built: 1
+  tickUpdate: 0
+  built: 0
   replacable: 1
   tileType: 6
+  category: 2
   tileUnderneath: 0
   walkable: 1
   placeholder: {fileID: 4760787376600872854}
-  timeToBuild: 2
+  timeToBuild: 0.05
   buildTime: 0
   assignedCitizen: {fileID: 0}
   backgroundTile: {fileID: 0}
+  destroyBackgroundTile: 1
+  doesRequireItem: 0
+  itemsRequired: []
 --- !u!114 &4451361382594178455
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -260,6 +265,6 @@ MonoBehaviour:
   x: 0
   y: 0
   walkable: 0
-  weight: 2
-  g: 0
+  weight: 50
+  g: 2
   h: 0

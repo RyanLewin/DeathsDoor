@@ -7,6 +7,7 @@ public class InputController : MonoBehaviour
     public static InputController instance { get; private set; }
     WorldController worldController;
     KeyBindings keyBindings;
+    Builder builder;
 
     private void Awake ()
     {
@@ -15,11 +16,19 @@ public class InputController : MonoBehaviour
         keyBindings = KeyBindings.GetKeyBindings;
     }
 
+    private void Start ()
+    {
+        builder = Builder.instance;
+    }
+
     private void Update ()
     {
         if (!KeyBindings.GetKeyBindings.IsChanging)
         {
             if (Menus.GetMenus.IsOverUI())
+                return;
+
+            if (builder.building || builder.destroy)
                 return;
 
             if (keyBindings.GetKey(BindingsNames.interact).AnyInput)
@@ -62,6 +71,10 @@ public class InputController : MonoBehaviour
                         Debug.Log("Already in Control");
                 }
             }
+            else if (hitObject.GetComponentInParent<Foliage>())
+            {
+                t = new Task(TaskItems.Mine, hitObject.position - transform.up, hitObject.gameObject, c);
+            }
             //if the hit object is a tile
             else if (hitObject.GetComponent<Tile>())
             {
@@ -78,7 +91,7 @@ public class InputController : MonoBehaviour
             }
             else if (hitObject.GetComponent<Item>())
             {
-                GiveTask(new Task(TaskItems.Loot, hitObject.position, hitObject.gameObject, c));
+                t = new Task(TaskItems.Loot, hitObject.position, hitObject.gameObject, c);
             }
 
             if (t.task == TaskItems.None)
@@ -105,7 +118,7 @@ public class InputController : MonoBehaviour
             {
                 worldController.SelectedCitizen = hitObject.GetComponent<Citizen>();
             }
-            else if (hitObject.GetComponent<Item>())
+            else if (hitObject.GetComponent<Item>() || hitObject.GetComponentInParent<Foliage>())
             {
                 Options.GetOptions.SetOwner(hitObject.gameObject);
             }
@@ -119,6 +132,7 @@ public class InputController : MonoBehaviour
     public void GiveTask (Task t)
     {
         Citizen c = worldController.SelectedCitizen;
+        Options.GetOptions.CloseOptions();
 
         if (c)
         {
@@ -132,6 +146,9 @@ public class InputController : MonoBehaviour
                     c.SetVehicle(t.obj.GetComponent<Vehicle>());
                     break;
             }
+
+            if (worldController.taskList.Contains(t))
+                worldController.taskList.Remove(t);
 
             if (keyBindings.GetKey(BindingsNames.addTask).AnyInput)
             {
