@@ -3,38 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
-public class Citizen : MonoBehaviour
+public class Citizen : AI
 {
-    WorldController worldController;
-    Pathfinder pathfinder;
-    PathRequestManager requestManager;
-    Vector3[] path;
-    int targetIndex;
-    public Task currTask { get; private set; }
     public List<Task> taskList { get; set; } = new List<Task>();
 
     bool newBorn = false;
     bool newCitizen = true;
-
-    public string citizenName = "First Last";
-    public bool gender = true;
-    public int age = 30;
-    public string dob = "Sep '96";
-    public int happiness = 60;
-    int maxHappiness = 100;
-    public int health = 100;
-    int maxHealth = 100;
-
+    
     int ability = 1;
     int potential = 100;
 
-    public Vector2 target;
-    bool move = false;
-
-    [Header("Housekeeping")]
-    public List<Stat> stats = new List<Stat>();
+    public AI target;
     
-    public Tile taskTile;
     float buildTimer;
 
     public Vehicle vehicle { get; private set; }
@@ -45,15 +25,38 @@ public class Citizen : MonoBehaviour
     Item itemToReplace;
     bool pickUp = true;
     public int invSetting = 2;
-    public List<Item> inventory = new List<Item>();
-    
+    [SerializeField]
+    Transform hand;
+    Tool tool;
+    float toolRange = 0;
+
+    protected override void Dead ()
+    {
+        base.Dead();
+        Schedule schedule = GetComponent<Schedule>();
+        for (int x = 0; x < schedule.days.Count; x++)
+        {
+            Day day = schedule.days[x];
+            for (int y = 0; y < day.citizenPeriods.Count; y++)
+            {
+                schedule.SetSchedule(x, y, day.tilePeriods[y]);
+            }
+        }
+    }
+
     private void Start ()
     {
         worldController = WorldController.GetWorldController;
         pathfinder = worldController.GetComponent<Pathfinder>();
         requestManager = worldController.GetComponent<PathRequestManager>();
+        inventory = GetComponent<Inventory>();
         if (newCitizen)
-            SetStats(newBorn);
+        {
+            SetStats();
+            newBorn = false;
+            newCitizen = false;
+            GetComponent<Schedule>().InstantiateSchedule();
+        }
         currTask = new Task(TaskItems.None, transform.position);
         GetComponent<Appearance>().SetAppearance();
     }
@@ -90,6 +93,8 @@ public class Citizen : MonoBehaviour
         switch (currTask.task)
         {
             case (TaskItems.None):
+
+                GiveTask(new Task(TaskItems.Wander, TileGrid.GetGrid.GetRandomTile(new Vector2(transform.position.x, transform.position.y), 2).transform.position, null, true));
                 break;
             case (TaskItems.Build):
                 if (currTask.obj.GetComponent<Tile>().Built)
@@ -116,14 +121,113 @@ public class Citizen : MonoBehaviour
             case (TaskItems.Mine):
                 SetToMine();
                 break;
+            case (TaskItems.Wander):
+                if (!wandering)
+                {
+                    StartCoroutine(Wander());
+                }
+                else
+                {
+                    if (Vector2.Distance(currTask.location, transform.position) < .5f)
+                    {
+                        EndTask();
+                        StopCoroutine(Wander());
+                    }
+                }
+                break;
+            case (TaskItems.Defend):
+                Defend();
+                break;
             case (TaskItems.Harvest):
             case (TaskItems.Hunt):
             case (TaskItems.Cook):
-            case (TaskItems.Defend):
             default:
                 GetOutOfVehicle();
                 currTask = new Task();
                 break;
+        }
+    }
+
+    bool wandering = false;
+    IEnumerator Wander ()
+    {
+        if (!move)
+        {
+            wandering = true;
+            move = true;
+            float secondsToWait = Random.Range(2f, 15f);
+            yield return new WaitForSeconds(secondsToWait);
+            Move();
+        }
+    }
+
+    void Defend ()
+    {
+        if (!tool)
+        {
+            tool = inventory.CheckForTool(ToolTypes.RangedWeapon, true);
+            if (tool)
+                toolRange = tool.range;
+            else
+                toolRange = 1;
+        }
+        if (Vector2.Distance(currTask.location, transform.position) < toolRange)
+        {
+            Attack();
+        }
+        else
+        {
+            if (!move)
+            {
+                Move();
+                move = true;
+            }
+        }
+    }
+
+    float attackTimer = 3f;
+
+    void Attack ()
+    {
+        target = currTask.obj.GetComponent<AI>();
+        int damage = tool ? tool.damage : 10;
+        float multiplier = 1;
+        
+        //_rotatePoint.LookAt(target.transform.position);
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, target.transform.rotation, 5f);
+        if (Quaternion.Angle(target.transform.rotation, transform.rotation) < .5f)
+        {
+            transform.rotation = Quaternion.Lerp(transform.rotation, target.transform.rotation, 1f);
+            transform.LookAt(target.transform.position);
+
+            //Calculate attack damage
+            if ((tool && tool.toolType != ToolTypes.RangedWeapon) || !tool)
+            {
+                multiplier = GetStat("HandToHand").value * .7f + GetStat("Aggression").value * .3f;
+                multiplier /= 20;
+            }
+
+            //accuracy
+            bool hit = true;
+            float accuracy = 100;
+
+            if ((tool && tool.toolType != ToolTypes.RangedWeapon) || !tool)
+            {
+                accuracy = GetStat("Accuracy").value / 20;
+                if (target.aiType == AIType.Human)
+                    accuracy -= target.GetStat("Agility").value / 20;
+
+                //If the random number is greater than the accuracy then the hit is missed
+                if (Random.Range(-1f, 1f) > accuracy)
+                    hit = false;
+
+                if (hit)
+                    target.SetHealth -= Mathf.RoundToInt(damage * multiplier);
+            }
+            else
+            {
+                tool.GetComponent<RangedWeapon>().Fire();
+            }
         }
     }
 
@@ -136,7 +240,16 @@ public class Citizen : MonoBehaviour
             {
                 if (buildTimer < foliage.timeToChop)
                 {
-                    buildTimer += Time.deltaTime * (GetStat("Strength").value / 5);
+                    float speed = Time.deltaTime * (GetStat("Strength").value / 5);
+                    speed /= 2;
+                    tool = inventory.CheckForTool(ToolTypes.Axe);
+                    if (tool)
+                    {
+                        if (tool.toolType == ToolTypes.Axe)
+                            speed *= 2;
+                    }
+                    buildTimer += speed;
+
                 }
                 else
                 {
@@ -176,6 +289,8 @@ public class Citizen : MonoBehaviour
                     {
                         GetComponent<Inventory>().AddItem(itemToLoot, itemToLoot.count);
                         itemToLoot.transform.SetParent(transform);
+                        itemToLoot.transform.rotation = transform.rotation;
+                        itemToLoot.transform.position = hand.transform.position;
                     }
                     else
                     {
@@ -381,77 +496,33 @@ public class Citizen : MonoBehaviour
         requestManager.RequestPath(transform.position, currTask.location, OnPathFound);
     }
 
-    void EndTask ()
+    protected override void EndTask ()
     {
-        StopCoroutine(FollowPath());
-        currTask = new Task();
-        targetIndex = 0;
-        path = new Vector3[0];
-        move = false;
-        taskTile = null;
+        base.EndTask();
+        StopAllCoroutines();
+        wandering = false;
         buildTimer = 0;
         itemToLoot = null;
         itemToReplace = null;
+        tool = null;
     }
 
-    public void OnPathFound (Vector3[] _path, bool _success)
+    void GetTask ()
     {
-        if (_success)
+        if (worldController.taskList.Count > 0)
         {
-            path = _path;
-            targetIndex = 0;
-            StopCoroutine(FollowPath());
-            StartCoroutine(FollowPath());
-        }
-        else
-        {
-            worldController.AddTask(currTask);
-            EndTask();
-        }
-    }
-
-    IEnumerator FollowPath ()
-    {
-        if (path.Length <= 0)
-        {
-            worldController.AddTask(currTask);
-            path = new Vector3[0];
-            targetIndex = 0;
-            currTask = new Task();
-            move = false;
-            yield break;
-        }
-        Vector3 currWaypoint = path[0];
-
-        while (true)
-        {
-            if (path.Length <= 0)
-                yield break;
-            if (transform.position == currWaypoint)
-            {
-                targetIndex++;
-                if (targetIndex >= path.Length)
-                {
-                    targetIndex = 0;
-                    path = new Vector3[0];
-                    move = false;
-                    yield break;
-                }
-                currWaypoint = path[targetIndex];
-            }
-            transform.up = new Vector3(currWaypoint.x, currWaypoint.y, transform.position.z) - transform.position;
-            float speed = Time.deltaTime * ((GetStat("Speed").value + 1) / 2);
-            if (TileGrid.GetGrid.GetTileAtPos(transform.position).tileType == TileType.Water)
-                speed *= .33f;
-            transform.position = Vector3.MoveTowards(transform.position, currWaypoint, speed);
-            yield return null;
+            currTask = worldController.GetTaskOfType(GetFocus);
+            taskTile = TileGrid.GetGrid.GetTileAtPos(currTask.location);
+            taskTile.assignedCitizen = this;
+            buildTimer = taskTile.buildTime;
         }
     }
 
     public void GiveTask (Task task)
     {
-        if (currTask.task == TaskItems.Move)
+        if (currTask.task == TaskItems.Move || currTask.task == TaskItems.Wander)
             EndTask();
+        StopCoroutine(Wander());
         currTask = task;
         taskTile = TileGrid.GetGrid.GetTileAtPos(currTask.location);
         taskTile.assignedCitizen = this;
@@ -470,24 +541,9 @@ public class Citizen : MonoBehaviour
         }
     }
 
-    void GetTask ()
+    protected override void SetStats ()
     {
-        if (worldController.taskList.Count > 0)
-        {
-            currTask = worldController.GetTaskOfType(GetFocus);
-            taskTile = TileGrid.GetGrid.GetTileAtPos(currTask.location);
-            taskTile.assignedCitizen = this;
-            buildTimer = taskTile.buildTime;
-        }
-    }
-
-    public Stat GetStat (string name)
-    {
-        return stats.Find(stat => stat.name == name);
-    }
-
-    void SetStats (bool isNewBorn)
-    {
+        base.SetStats();
         stats = new List<Stat>
         {
             new Stat("Building"),
@@ -507,10 +563,11 @@ public class Citizen : MonoBehaviour
             new Stat("Intelligence"),
             new Stat("Loyalty")
         };
-        
+
+        aiType = AIType.Human;
         gender = Random.Range(0, 2) != 0;
         string[] lines;
-        int randomLineNumber = 0; 
+        int randomLineNumber = 0;
         if (gender)
         {
             lines = File.ReadAllLines("Assets/Scripts/AI/MaleNames.txt");
@@ -523,7 +580,7 @@ public class Citizen : MonoBehaviour
         }
         citizenName = lines[randomLineNumber];
 
-        SetAge(isNewBorn);
+        SetAge(newBorn);
         potential = Random.Range(17, 101);
 
         if (age >= 7)
@@ -579,6 +636,7 @@ public class Citizen : MonoBehaviour
         {
             age = 0;
             int birthYear = worldController.GetYear;
+            birthMonth = worldController.GetMonth;
             dob = worldController.GetMonthString() + "'" + birthYear.ToString("00");
         }
         else
@@ -589,17 +647,5 @@ public class Citizen : MonoBehaviour
                 birthYear = 100 + birthYear;
             dob = worldController.GetMonthString(true) + "'" + birthYear.ToString("00");
         }
-    }
-}
-
-public class Stat
-{
-    public string name;
-    public float value;
-
-    public Stat (string _name, float _value = 1)
-    {
-        name = _name;
-        value = _value;
     }
 }

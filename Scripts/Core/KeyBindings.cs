@@ -37,6 +37,7 @@ public class KeyBindings : MonoBehaviour
             new CustomBinding(BindingsNames.interact, new KeyCode[]{ (KeyCode)System.Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString(BindingsNames.interact, "Mouse1")), (KeyCode)System.Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString(BindingsNames.interact + "Alt", "None")) }),
             new CustomBinding(BindingsNames.addTask, new KeyCode[]{ (KeyCode)System.Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString(BindingsNames.addTask, "LeftShift")), (KeyCode)System.Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString(BindingsNames.addTask + "Alt", "RightShift")) }),
             new CustomBinding(BindingsNames.citizenDetails, new KeyCode[]{ (KeyCode)System.Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString(BindingsNames.citizenDetails, "C")), (KeyCode)System.Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString(BindingsNames.citizenDetails + "Alt", "None")) }),
+            new CustomBinding(BindingsNames.showSchedule, new KeyCode[]{ (KeyCode)System.Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString(BindingsNames.showSchedule, "V")), (KeyCode)System.Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString(BindingsNames.showSchedule + "Alt", "None")) }),
             new CustomBinding(BindingsNames.bulldoze, new KeyCode[]{ (KeyCode)System.Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString(BindingsNames.bulldoze, "B")), (KeyCode)System.Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString(BindingsNames.bulldoze + "Alt", "None")) })
         };
 
@@ -235,6 +236,7 @@ public class BindingsNames
     public static string select = "Select";
     public static string interact = "Interact";
     public static string citizenDetails = "CitizenDetails";
+    public static string showSchedule = "ShowSchedule";
     public static string bulldoze = "Bulldoze";
     public static string addTask = "Add Task";
 }

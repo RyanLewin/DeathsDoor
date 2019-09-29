@@ -147,7 +147,7 @@ public class TileGrid : MonoBehaviour
         Destroy(grid[x, y].gameObject);
         grid[x, y] = tile;
         
-        Node node = grid[x, y].GetComponent<Node>();
+        PathNode node = grid[x, y].GetComponent<PathNode>();
         node.x = x;
         node.y = y;
         node.walkable = true;
@@ -249,7 +249,7 @@ public class TileGrid : MonoBehaviour
                 t.y = y;
                 grid[x, y] = t;
 
-                Node node = grid[x, y].GetComponent<Node>();
+                PathNode node = grid[x, y].GetComponent<PathNode>();
                 node.x = x;
                 node.y = y;
                 node.walkable = true;
@@ -266,9 +266,9 @@ public class TileGrid : MonoBehaviour
         return compare;
     }
 
-    public List<Node> GetNeighbours (Node node)
+    public List<PathNode> GetNeighbours (PathNode node)
     {
-        List<Node> neighbours = new List<Node>();
+        List<PathNode> neighbours = new List<PathNode>();
 
         for (int x = -1; x <= 1; x++)
         {
@@ -285,7 +285,7 @@ public class TileGrid : MonoBehaviour
 
                 if (checkX >= 0 && checkX < xSize && checkY >= 0 && checkY < ySize)
                 {
-                    neighbours.Add(grid[checkX, checkY].GetComponent<Node>());
+                    neighbours.Add(grid[checkX, checkY].GetComponent<PathNode>());
                 }
             }
         }
@@ -293,7 +293,7 @@ public class TileGrid : MonoBehaviour
         return neighbours;
     }
 
-    bool CheckIfBlocked (Node node, int x, int y)
+    bool CheckIfBlocked (PathNode node, int x, int y)
     {
         if (Mathf.Abs(x) == 1 && Mathf.Abs(y) == 1)
         {
@@ -316,6 +316,21 @@ public class TileGrid : MonoBehaviour
                 return tile.sprite;
         }
         return GetSpriteOfTile(TileType.Grass);
+    }
+
+    public Tile GetRandomTile (Vector2 pos, int range)
+    {
+        int x = (int)pos.x + Random.Range(-range, range);
+        int y = (int)pos.y + Random.Range(-range, range);
+        
+        x = Mathf.Clamp(x, 0, xSize);
+        y = Mathf.Clamp(y, 0, ySize);
+
+        Tile tile = GetTileAtPos(new Vector2(x, y));
+        if (tile.walkable)
+            return tile;
+        else
+            return GetRandomTile(pos, range);
     }
 
     public Tile GetTileAtPos (Vector2 pos)

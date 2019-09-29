@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(Node))]
+[RequireComponent(typeof(PathNode))]
 public class Tile : MonoBehaviour
 {
     protected TileGrid grid;
@@ -577,7 +577,7 @@ public class Tile : MonoBehaviour
         if (category == Category.Walls)
             UpdateWall();
         
-        GetComponent<Node>().walkable = walkable;
+        GetComponent<PathNode>().walkable = walkable;
 
         if (GetComponent<Inventory>())
         {
@@ -585,48 +585,58 @@ public class Tile : MonoBehaviour
         }
     }
 
+    bool isQuitting = false;
+
+    private void OnApplicationQuit ()
+    {
+        isQuitting = true;
+    }
+
     private void OnDestroy ()
     {
-        if (doesRequireItem && Built)
+        if (!isQuitting)
         {
-            foreach (Requirements i in itemsRequired)
+            if (doesRequireItem && Built)
             {
-                Item item = Instantiate(i.item, transform.position, transform.rotation);
-                item.count = i.count;
-                item.SetToBeLooted = true;
+                foreach (Requirements i in itemsRequired)
+                {
+                    Item item = Instantiate(i.item, transform.position, transform.rotation);
+                    item.count = i.count;
+                    item.SetToBeLooted = true;
+                }
             }
+
+            if (category != Category.Walls)
+                return;
+
+            Tile left = grid.GetTileAtPos(new Vector2(x - 1, y));
+            Tile right = grid.GetTileAtPos(new Vector2(x + 1, y));
+            Tile up = grid.GetTileAtPos(new Vector2(x, y + 1));
+            Tile down = grid.GetTileAtPos(new Vector2(x, y - 1));
+
+            Tile leftUp = grid.GetTileAtPos(new Vector2(x - 1, y + 1));
+            Tile rightUp = grid.GetTileAtPos(new Vector2(x + 1, y + 1));
+            Tile rightDown = grid.GetTileAtPos(new Vector2(x + 1, y - 1));
+            Tile leftDown = grid.GetTileAtPos(new Vector2(x - 1, y - 1));
+
+            bool l = left?.category == Category.Walls;
+            bool r = right?.category == Category.Walls;
+            bool u = up?.category == Category.Walls;
+            bool d = down?.category == Category.Walls;
+            bool lu = leftUp?.category == Category.Walls;
+            bool ru = rightUp?.category == Category.Walls;
+            bool rd = rightDown?.category == Category.Walls;
+            bool ld = leftDown?.category == Category.Walls;
+
+            up?.AdjacentWall(u);
+            down?.AdjacentWall(d);
+            left?.AdjacentWall(l);
+            right?.AdjacentWall(r);
+            leftUp?.AdjacentWall(lu);
+            rightUp?.AdjacentWall(ru);
+            leftDown?.AdjacentWall(ld);
+            rightDown?.AdjacentWall(rd);
         }
-
-        if (category != Category.Walls)
-            return;
-
-        Tile left = grid.GetTileAtPos(new Vector2(x - 1, y));
-        Tile right = grid.GetTileAtPos(new Vector2(x + 1, y));
-        Tile up = grid.GetTileAtPos(new Vector2(x, y + 1));
-        Tile down = grid.GetTileAtPos(new Vector2(x, y - 1));
-
-        Tile leftUp = grid.GetTileAtPos(new Vector2(x - 1, y + 1));
-        Tile rightUp = grid.GetTileAtPos(new Vector2(x + 1, y + 1));
-        Tile rightDown = grid.GetTileAtPos(new Vector2(x + 1, y - 1));
-        Tile leftDown = grid.GetTileAtPos(new Vector2(x - 1, y - 1));
-
-        bool l = left?.category == Category.Walls;
-        bool r = right?.category == Category.Walls;
-        bool u = up?.category == Category.Walls;
-        bool d = down?.category == Category.Walls;
-        bool lu = leftUp?.category == Category.Walls;
-        bool ru = rightUp?.category == Category.Walls;
-        bool rd = rightDown?.category == Category.Walls;
-        bool ld = leftDown?.category == Category.Walls;
-
-        up?.AdjacentWall(u);
-        down?.AdjacentWall(d);
-        left?.AdjacentWall(l);
-        right?.AdjacentWall(r);
-        leftUp?.AdjacentWall(lu);
-        rightUp?.AdjacentWall(ru);
-        leftDown?.AdjacentWall(ld);
-        rightDown?.AdjacentWall(rd);
     }
 }
 

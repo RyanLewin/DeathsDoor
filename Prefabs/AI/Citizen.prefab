@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7074194298792432947}
   - component: {fileID: 1964436081474858463}
   m_Layer: 0
-  m_Name: handLeft
+  m_Name: handRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -177,17 +177,52 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 569e3b71e39e8174194e4c2baf990625, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  taskTile: {fileID: 0}
+  stats:
+  - name: Building
+    value: 1
+  - name: Cooking
+    value: 1
+  - name: Cleanliness
+    value: 1
+  - name: Artistic
+    value: 1
+  - name: HandToHand
+    value: 1
+  - name: Strength
+    value: 1
+  - name: Accuracy
+    value: 1
+  - name: Agility
+    value: 1
+  - name: Speed
+    value: 1
+  - name: Aggression
+    value: 1
+  - name: Composure
+    value: 1
+  - name: Mundanity
+    value: 1
+  - name: Logic
+    value: 1
+  - name: Speech
+    value: 1
+  - name: Intelligence
+    value: 1
+  - name: Loyalty
+    value: 1
   citizenName: First Last
   gender: 1
   age: 30
+  birthMonth: 9
   dob: Sep '96
   happiness: 60
   health: 100
-  target: {x: 0, y: 0}
-  taskTile: {fileID: 0}
+  alive: 1
+  target: {fileID: 0}
   item: {fileID: 0}
   invSetting: 2
-  inventory: []
+  hand: {fileID: 3263130612673353643}
 --- !u!58 &5295514231254579726
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -288,7 +323,7 @@ GameObject:
   - component: {fileID: 3263130612673353643}
   - component: {fileID: 5281876735473260897}
   m_Layer: 0
-  m_Name: handRight
+  m_Name: handLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

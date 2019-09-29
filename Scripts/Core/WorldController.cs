@@ -22,7 +22,7 @@ public class WorldController : MonoBehaviour
 
     [SerializeField]
     Citizen citizen = default;
-    List<Citizen> citizensList = new List<Citizen>();
+    public List<Citizen> citizensList = new List<Citizen>();
     [SerializeField]
     List<Citizen> lookingForTask = new List<Citizen>();
     [SerializeField]
@@ -32,14 +32,42 @@ public class WorldController : MonoBehaviour
     public List<Task> taskList = new List<Task>();
     bool newLevel = true;
 
-    public Citizen selectedCitizen;
+    [SerializeField]
+    Citizen selectedCitizen;
     public Citizen SelectedCitizen
     {
         get => selectedCitizen;
         set
         {
             selectedCitizen = value;
-            Menus.GetMenus.statsUI.GetChild(1).gameObject.SetActive(selectedCitizen); 
+            //Menus.GetMenus.statsUI.GetChild(1).gameObject.SetActive(selectedCitizen);
+            Menus.GetMenus.ShowSideBars(selectedCitizen, selectedCitizen);
+        }
+    }
+
+    [SerializeField]
+    Tile selectedTile;
+    public Tile SelectedTile
+    {
+        get => selectedTile;
+        set
+        {
+            selectedTile = value;
+            //Menus.GetMenus.statsUI.GetChild(1).gameObject.SetActive(selectedCitizen);
+            Menus.GetMenus.ShowSideBars(false, selectedTile);
+        }
+    }
+
+    public void BirthMonths ()
+    {
+        foreach (Citizen c in citizensList)
+        {
+            if (!c.alive)
+                continue;
+            if (c.birthMonth == GetMonth)
+            {
+                c.age++;
+            }
         }
     }
 
@@ -264,7 +292,7 @@ public class WorldController : MonoBehaviour
     {
         if (taskList.Contains(task))
             return false;
-        if (task.task == TaskItems.None || task.task == TaskItems.Move)
+        if (task.task == TaskItems.None || task.task == TaskItems.Move || task.task == TaskItems.Wander)
             return false;
         if (task.personal)
             return false;

@@ -4,12 +4,12 @@ using UnityEngine;
 
 //dirty enum
 public enum NODE_STATE { OPEN, CLOSED, ERROR, PATH };
-public class Node : MonoBehaviour, IHeapItem<Node>
+public class PathNode : MonoBehaviour, IHeapItem<PathNode>
 {
     public List<GameObject> ConnectedNodes = new List<GameObject>();
 
     [SerializeField]
-    public Node ParentNode { get; set; }
+    public PathNode ParentNode { get; set; }
 
     /// <summary>
     /// list of weighting for each connection in order.
@@ -23,14 +23,14 @@ public class Node : MonoBehaviour, IHeapItem<Node>
     public int h;
     public float f { get { return g + h; } }
 
-    public List<Node> GetNodeValues ()
+    public List<PathNode> GetNodeValues ()
     {
-        List<Node> temp = new List<Node>();
+        List<PathNode> temp = new List<PathNode>();
 
         for (int i = 0; i < ConnectedNodes.Count; i++)
         {
-            //temp.Add(new Node(ConnectedNodes[i].GetComponent<Node>(), ConnectionCosts[i], ConnectedNodes[i].GetComponent<Tile>().IsWalkable));
-            temp.Add(ConnectedNodes[i].GetComponent<Node>());
+            //temp.Add(new PathNode(ConnectedNodes[i].GetComponent<PathNode>(), ConnectionCosts[i], ConnectedNodes[i].GetComponent<Tile>().IsWalkable));
+            temp.Add(ConnectedNodes[i].GetComponent<PathNode>());
         }
 
         return temp;
@@ -44,7 +44,7 @@ public class Node : MonoBehaviour, IHeapItem<Node>
         set { heapIndex = value; }
     }
 
-    public int CompareTo (Node comparableNode)
+    public int CompareTo (PathNode comparableNode)
     {
         int compare = f.CompareTo(comparableNode.f);
         if (compare == 0)

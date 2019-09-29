@@ -32,5 +32,6 @@ public enum TaskItems
     Defend,
     Loot,
     Mine,
-    Harvest
+    Harvest,
+    Wander
 }

@@ -8,10 +8,10 @@ public class Pathfinder : MonoBehaviour
     TileGrid tileGrid;
     PathRequestManager requestManager;
 
-    public Heap<Node> openNodes;
-    public HashSet<Node> closedNodes;
+    public Heap<PathNode> openNodes;
+    public HashSet<PathNode> closedNodes;
 
-    public Node currentNode;
+    public PathNode currentNode;
 
     int maxSize;
 
@@ -36,16 +36,16 @@ public class Pathfinder : MonoBehaviour
         Vector3[] path = new Vector3[0];
         bool pathSuccess = false;
 
-        Node start = tileGrid.GetTileAtPos(_start).GetComponent<Node>();
-        Node target = tileGrid.GetTileAtPos(_end).GetComponent<Node>();
+        PathNode start = tileGrid.GetTileAtPos(_start).GetComponent<PathNode>();
+        PathNode target = tileGrid.GetTileAtPos(_end).GetComponent<PathNode>();
         if (!start || !target)
             yield return null;
 
         if (start != target)
         {
             //list of open and closed nodes
-            openNodes = new Heap<Node>(tileGrid.xSize * tileGrid.ySize);
-            closedNodes = new HashSet<Node>();
+            openNodes = new Heap<PathNode>(tileGrid.xSize * tileGrid.ySize);
+            closedNodes = new HashSet<PathNode>();
 
             openNodes.Add(start);
 
@@ -61,7 +61,7 @@ public class Pathfinder : MonoBehaviour
                     break; 
                 }
 
-                foreach (Node n in tileGrid.GetNeighbours(currentNode))
+                foreach (PathNode n in tileGrid.GetNeighbours(currentNode))
                 {
                     if (closedNodes.Contains(n))
                         continue;
@@ -98,10 +98,10 @@ public class Pathfinder : MonoBehaviour
         requestManager.FinishedProcessing(path, pathSuccess);
     }
 
-    Vector3[] RetracePath (Node startNode, Node endNode)
+    Vector3[] RetracePath (PathNode startNode, PathNode endNode)
     {
-        List<Node> path = new List<Node>();
-        Node currentNode = endNode;
+        List<PathNode> path = new List<PathNode>();
+        PathNode currentNode = endNode;
 
         while (currentNode != startNode)
         {
@@ -113,7 +113,7 @@ public class Pathfinder : MonoBehaviour
         return waypoints;
     }
 
-    Vector3[] SimplifyPath(List<Node> path)
+    Vector3[] SimplifyPath(List<PathNode> path)
     {
         List<Vector3> waypoints = new List<Vector3>();
         Vector2 oldDir = Vector2.zero;
@@ -136,7 +136,7 @@ public class Pathfinder : MonoBehaviour
         return waypoints.ToArray();
     }
 
-    int GetDistance (Node a, Node b)
+    int GetDistance (PathNode a, PathNode b)
     {
         int distX = Mathf.Abs(a.x - b.x);
         int  distY = Mathf.Abs(a.y - b.y);
@@ -151,13 +151,13 @@ public class Pathfinder : MonoBehaviour
 //helper struct to pair total weight and node
 //public struct NodeValue : IHeapItem<NodeValue>
 //{
-//    public Node Node;
+//    public PathNode PathNode;
 //    public float g;
 //    public bool walkable;
 
-//    public NodeValue (Node _node, float _weight, bool _walkable)
+//    public NodeValue (PathNode _node, float _weight, bool _walkable)
 //    {
-//        Node = _node;
+//        PathNode = _node;
 //        g = _weight;
 //        walkable = _walkable;
 //    }
@@ -171,10 +171,10 @@ public class Pathfinder : MonoBehaviour
 
 //    public int CompareTo (NodeValue comparableNode)
 //    {
-//        int compare = Node.f.CompareTo(comparableNode.Node.f);
+//        int compare = PathNode.f.CompareTo(comparableNode.PathNode.f);
 //        if (compare == 0)
 //        {
-//            compare = Node.h.CompareTo(comparableNode.Node.h);
+//            compare = PathNode.h.CompareTo(comparableNode.PathNode.h);
 //        }
 //        return -compare;
 //    }

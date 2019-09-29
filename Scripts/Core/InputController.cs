@@ -116,7 +116,20 @@ public class InputController : MonoBehaviour
 
             if (hitObject.GetComponent<Citizen>())
             {
+                worldController.SelectedTile = null;
                 worldController.SelectedCitizen = hitObject.GetComponent<Citizen>();
+            }
+            else if (hitObject.GetComponent<Schedule>())
+            {
+                worldController.SelectedCitizen = null;
+                if (hitObject.GetComponent<Tile>())
+                {
+                    worldController.SelectedTile = hitObject.GetComponent<Tile>();
+                }
+                else
+                {
+                    worldController.SelectedTile = null;
+                }
             }
             else if (hitObject.GetComponent<Item>() || hitObject.GetComponentInParent<Foliage>())
             {
@@ -124,6 +137,7 @@ public class InputController : MonoBehaviour
             }
             else
             {
+                worldController.SelectedTile = null;
                 worldController.SelectedCitizen = null;
             }
         }

@@ -54,7 +54,7 @@ public class TimeController : MonoBehaviour
             case (11):
                 if (day > 30)
                 {
-                    IncrementDay(ref month, ref day, ref year);
+                    IncrementMonth(ref month, ref day, ref year);
                 }
                 break;
             case (1):
@@ -63,7 +63,7 @@ public class TimeController : MonoBehaviour
                 {
                     if (day > 28)
                     {
-                        IncrementDay(ref month, ref day, ref year);
+                        IncrementMonth(ref month, ref day, ref year);
                     }
                 }
                 //not leap year
@@ -71,14 +71,14 @@ public class TimeController : MonoBehaviour
                 {
                     if (day > 27)
                     {
-                        IncrementDay(ref month, ref day, ref year);
+                        IncrementMonth(ref month, ref day, ref year);
                     }
                 }
                 break;
             default:
                 if (day > 29)
                 {
-                    IncrementDay(ref month, ref day, ref year);
+                    IncrementMonth(ref month, ref day, ref year);
                 }
                 break;
         }
@@ -88,8 +88,10 @@ public class TimeController : MonoBehaviour
         worldController.GetYear = year;
     }
 
-    void IncrementDay (ref int month, ref int day, ref int year)
+    void IncrementMonth (ref int month, ref int day, ref int year)
     {
+        worldController.BirthMonths();
+
         month += 1;
         day = 0;
         if (month > 11)

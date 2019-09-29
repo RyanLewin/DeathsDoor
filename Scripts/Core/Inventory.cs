@@ -160,6 +160,37 @@ public class Inventory : MonoBehaviour
         return false;
     }
 
+    public Tool CheckForTool (ToolTypes toolType = ToolTypes.Axe, bool any = false)
+    {
+        Tool tool = null;
+        int damage = 0;
+        for (int i = 0; i < items.Count; i++)
+        {
+            if (!items[i])
+                continue;
+            Tool t = items[i].GetComponent<Tool>();
+            if (t)
+            {
+                if (t.damage < damage)
+                {
+                    continue;
+                }
+
+                if (any)
+                {
+                    tool = t;
+                    damage = tool.damage;
+                }
+                else if (t.toolType == toolType)
+                {
+                    tool = t;
+                    damage = tool.damage;
+                }
+            }
+        }
+        return tool;
+    }
+
     public bool CheckForItem (Item item, int count = 1)
     {
         for (int i = 0; i < items.Count; i++)
